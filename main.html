@@ -32,7 +32,6 @@
 
 <script>
 (() => {
-  // Images: Use your own image URLs or placeholders here
   const baseImages = [
     'https://via.placeholder.com/100?text=Img1',
     'https://via.placeholder.com/100?text=Img2',
@@ -41,11 +40,10 @@
     'https://via.placeholder.com/100?text=Img5'
   ];
 
-  // State variables
-  let images = []; // six images with one duplicate
-  let clickedIndices = []; // indices of clicked images
-  let clickedElements = []; // DOM elements clicked
-  let verifyClicked = false;
+  let images = [];
+  let clickedIndices = [];
+  let clickedElements = [];
+  let verified = false;
 
   const container = document.getElementById('images-container');
   const resetBtn = document.getElementById('reset');
@@ -54,8 +52,8 @@
   const para = document.getElementById('para');
 
   function shuffle(array) {
-    for(let i = array.length -1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+    for (let i = array.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
     }
   }
@@ -63,63 +61,59 @@
   function resetState() {
     clickedIndices = [];
     clickedElements = [];
-    verifyClicked = false;
+    verified = false;
     para.textContent = '';
     messageH3.textContent = "Please click on the identical tiles to verify that you are not a robot.";
     resetBtn.style.display = 'none';
     verifyBtn.style.display = 'none';
-    // Remove all selections
+
     [...container.children].forEach(img => img.classList.remove('selected'));
   }
 
   function createImages() {
-    // Pick one random index to duplicate
     const duplicateIndex = Math.floor(Math.random() * baseImages.length);
     images = [...baseImages];
     images.push(baseImages[duplicateIndex]); // add duplicate
-
     shuffle(images);
 
-    // Clear container
     container.innerHTML = '';
-
-    // Create img elements
     images.forEach((src, idx) => {
       const img = document.createElement('img');
       img.src = src;
       img.alt = "Verification image";
-      img.dataset.index = idx; // store index for reference
+      img.dataset.index = idx;
       img.addEventListener('click', onImageClick);
       container.appendChild(img);
     });
   }
 
   function onImageClick(e) {
-    if (verifyClicked) return; // ignore clicks after verification
+    if (verified) return; // no action after verify
 
     const img = e.target;
     const idx = +img.dataset.index;
 
-    // Prevent double clicking same image twice
+    // Prevent double clicking the same image twice
     if (clickedIndices.includes(idx)) return;
 
-    if (clickedIndices.length < 2) {
-      clickedIndices.push(idx);
-      clickedElements.push(img);
-      img.classList.add('selected');
+    // Allow max 2 clicks only
+    if (clickedIndices.length >= 2) return;
 
-      if (clickedIndices.length === 1) {
-        // State 2: At least one tile clicked => show reset
-        resetBtn.style.display = 'inline-block';
-        verifyBtn.style.display = 'none';
-        para.textContent = '';
-        messageH3.textContent = "Please click on the identical tiles to verify that you are not a robot.";
-      }
+    clickedIndices.push(idx);
+    clickedElements.push(img);
+    img.classList.add('selected');
 
-      if (clickedIndices.length === 2) {
-        // Show verify button only if two different tiles selected
-        verifyBtn.style.display = 'inline-block';
-      }
+    // Show Reset button when at least one tile clicked
+    if (clickedIndices.length === 1) {
+      resetBtn.style.display = 'inline-block';
+      verifyBtn.style.display = 'none';
+      para.textContent = '';
+      messageH3.textContent = "Please click on the identical tiles to verify that you are not a robot.";
+    }
+
+    // Show Verify button only when exactly 2 tiles clicked
+    if (clickedIndices.length === 2) {
+      verifyBtn.style.display = 'inline-block';
     }
   }
 
@@ -130,7 +124,7 @@
   verifyBtn.addEventListener('click', () => {
     if (clickedIndices.length !== 2) return;
 
-    verifyClicked = true;
+    verified = true;
     verifyBtn.style.display = 'none';
 
     const firstImg = images[clickedIndices[0]];
@@ -143,7 +137,6 @@
     }
   });
 
-  // Initialize page
   createImages();
   resetState();
 
