@@ -1,147 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>I'm not a robot task</title>
-<style>
-  #images-container img {
-    width: 100px;
-    height: 100px;
-    margin: 5px;
-    cursor: pointer;
-    border: 2px solid transparent;
-  }
-  #images-container img.selected {
-    border-color: blue;
-  }
-  #reset, #verify {
-    display: none;
-    margin: 10px 5px 10px 0;
-    padding: 5px 15px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>I'm not a Robot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .tile {
+      width: 100px;
+      height: 100px;
+      border: 2px solid #ccc;
+      cursor: pointer;
+    }
+    .tile.selected {
+      border-color: green;
+    }
+    #reset, #verify {
+      margin: 20px 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #reset, #verify {
+      display: none;
+    }
+    #para {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
+  <h3 id="h">Please click on the identical tiles to verify that you are not a robot.</h3>
+  <div class="container" id="tileContainer"></div>
+  <button id="reset">Reset</button>
+  <button id="verify">Verify</button>
+  <p id="para"></p>
 
-<h3 id="h">Please click on the identical tiles to verify that you are not a robot.</h3>
-<div id="images-container"></div>
-<button id="reset">Reset</button>
-<button id="verify">Verify</button>
-<p id="para"></p>
+  <script>
+    const images = [
+      'https://via.placeholder.com/100?text=1',
+      'https://via.placeholder.com/100?text=2',
+      'https://via.placeholder.com/100?text=3',
+      'https://via.placeholder.com/100?text=4',
+      'https://via.placeholder.com/100?text=5'
+    ];
 
-<script>
-(() => {
-  const baseImages = [
-    'https://via.placeholder.com/100?text=Img1',
-    'https://via.placeholder.com/100?text=Img2',
-    'https://via.placeholder.com/100?text=Img3',
-    'https://via.placeholder.com/100?text=Img4',
-    'https://via.placeholder.com/100?text=Img5'
-  ];
+    const tileContainer = document.getElementById("tileContainer");
+    const resetBtn = document.getElementById("reset");
+    const verifyBtn = document.getElementById("verify");
+    const para = document.getElementById("para");
 
-  let images = [];
-  let clickedIndices = [];
-  let clickedElements = [];
-  let verified = false;
+    let selectedImages = [];
+    let tileElements = [];
 
-  const container = document.getElementById('images-container');
-  const resetBtn = document.getElementById('reset');
-  const verifyBtn = document.getElementById('verify');
-  const messageH3 = document.getElementById('h');
-  const para = document.getElementById('para');
+    function init() {
+      let selected = images.slice();
+      let dupIndex = Math.floor(Math.random() * 5);
+      selected.push(selected[dupIndex]);
+      selected.sort(() => Math.random() - 0.5);
 
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      let j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      tileContainer.innerHTML = "";
+      selectedImages = [];
+      tileElements = [];
+
+      selected.forEach((src, index) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.className = "tile";
+        img.dataset.index = index;
+        img.addEventListener("click", () => handleTileClick(img, src));
+        tileContainer.appendChild(img);
+        tileElements.push(img);
+      });
+
+      resetBtn.style.display = "none";
+      verifyBtn.style.display = "none";
+      para.textContent = "";
     }
-  }
 
-  function resetState() {
-    clickedIndices = [];
-    clickedElements = [];
-    verified = false;
-    para.textContent = '';
-    messageH3.textContent = "Please click on the identical tiles to verify that you are not a robot.";
-    resetBtn.style.display = 'none';
-    verifyBtn.style.display = 'none';
+    function handleTileClick(img, src) {
+      if (!selectedImages.some(item => item.img === img) && selectedImages.length < 2) {
+        img.classList.add("selected");
+        selectedImages.push({ img, src });
+        resetBtn.style.display = "inline-block";
 
-    [...container.children].forEach(img => img.classList.remove('selected'));
-  }
+        if (selectedImages.length === 2) {
+          verifyBtn.style.display = "inline-block";
+        }
+      }
+    }
 
-  function createImages() {
-    const duplicateIndex = Math.floor(Math.random() * baseImages.length);
-    images = [...baseImages];
-    images.push(baseImages[duplicateIndex]); // add duplicate
-    shuffle(images);
-
-    container.innerHTML = '';
-    images.forEach((src, idx) => {
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = "Verification image";
-      img.dataset.index = idx;
-      img.addEventListener('click', onImageClick);
-      container.appendChild(img);
+    resetBtn.addEventListener("click", () => {
+      selectedImages.forEach(item => item.img.classList.remove("selected"));
+      selectedImages = [];
+      verifyBtn.style.display = "none";
+      resetBtn.style.display = "none";
+      para.textContent = "";
     });
-  }
 
-  function onImageClick(e) {
-    if (verified) return; // no action after verify
+    verifyBtn.addEventListener("click", () => {
+      const [first, second] = selectedImages;
+      if (first.src === second.src) {
+        para.textContent = "You are a human. Congratulations!";
+      } else {
+        para.textContent = "We can't verify you as a human. You selected the non-identical tiles.";
+      }
+      verifyBtn.style.display = "none";
+    });
 
-    const img = e.target;
-    const idx = +img.dataset.index;
-
-    // Prevent double clicking the same image twice
-    if (clickedIndices.includes(idx)) return;
-
-    // Allow max 2 clicks only
-    if (clickedIndices.length >= 2) return;
-
-    clickedIndices.push(idx);
-    clickedElements.push(img);
-    img.classList.add('selected');
-
-    // Show Reset button when at least one tile clicked
-    if (clickedIndices.length === 1) {
-      resetBtn.style.display = 'inline-block';
-      verifyBtn.style.display = 'none';
-      para.textContent = '';
-      messageH3.textContent = "Please click on the identical tiles to verify that you are not a robot.";
-    }
-
-    // Show Verify button only when exactly 2 tiles clicked
-    if (clickedIndices.length === 2) {
-      verifyBtn.style.display = 'inline-block';
-    }
-  }
-
-  resetBtn.addEventListener('click', () => {
-    resetState();
-  });
-
-  verifyBtn.addEventListener('click', () => {
-    if (clickedIndices.length !== 2) return;
-
-    verified = true;
-    verifyBtn.style.display = 'none';
-
-    const firstImg = images[clickedIndices[0]];
-    const secondImg = images[clickedIndices[1]];
-
-    if (firstImg === secondImg) {
-      para.textContent = "You are a human. Congratulations!";
-    } else {
-      para.textContent = "We can't verify you as a human. You selected the non-identical tiles.";
-    }
-  });
-
-  createImages();
-  resetState();
-
-})();
-</script>
-
+    window.onload = init;
+  </script>
 </body>
 </html>
